@@ -1,0 +1,19 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
+name: airblue
+description: Minimal Fedora 44 XFCE Atomic image for the Apple MacBookAir5,1
+base-image: ghcr.io/blue-build/base-images/fedora-base
+image-version: 44
+
+modules:
+  - from-file: packages.yml
+  - type: files
+    files:
+      - source: system
+        destination: /
+  - type: script
+    scripts:
+      - install-themes.sh
+  - from-file: flatpaks.yml
+  - from-file: services.yml
+  - type: signing

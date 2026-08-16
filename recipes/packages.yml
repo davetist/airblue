@@ -1,0 +1,52 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/module-v1.json
+type: dnf
+install:
+  packages:
+    - lightdm
+    - lightdm-gtk
+    - xfce4-session
+    - xfce4-panel
+    - xfce4-settings
+    - xfconf
+    - xfwm4
+    - xfdesktop
+    - thunar
+    - xfce4-terminal
+    - mousepad
+    - xarchiver
+    - xfce4-notifyd
+    - xfce4-power-manager
+    - NetworkManager-wifi
+    - NetworkManager-bluetooth
+    - network-manager-applet
+    - ModemManager
+    - xfce4-pulseaudio-plugin
+    - xfce4-whiskermenu-plugin
+    - xfce4-docklike-plugin
+    - xfce4-places-plugin
+    - xfce4-screenshooter-plugin
+    - xfce4-xkb-plugin
+    - pipewire
+    - pipewire-pulseaudio
+    - wireplumber
+    - upower
+    - bluez
+    - bluez-obexd
+    - cups
+    - flatpak
+    - podman
+    - distrobox
+    - fwupd
+    - linux-firmware
+    - mesa-dri-drivers
+    - libinput
+    - papirus-icon-theme
+    - gtk-murrine-engine
+    - sassc
+    - git-core
+remove:
+  packages:
+    - firefox
+    - firefox-langpacks
+    - toolbox

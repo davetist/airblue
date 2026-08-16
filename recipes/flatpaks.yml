@@ -1,0 +1,19 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/module-v1.json
+type: default-flatpaks
+configurations:
+  - scope: system
+    notify: true
+    repo:
+      name: flathub
+      title: Flathub (system)
+      url: https://dl.flathub.org/repo/flathub.flatpakrepo
+    install:
+      - app.zen_browser.zen
+      - io.github.kolunmi.Bazaar
+  - scope: user
+    notify: false
+    repo:
+      name: flathub
+      title: Flathub (user)
+      url: https://dl.flathub.org/repo/flathub.flatpakrepo

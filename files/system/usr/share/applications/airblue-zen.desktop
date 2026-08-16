@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Zen Browser
+Icon=app.zen_browser.zen
+Exec=flatpak run app.zen_browser.zen %U
+Terminal=false
+MimeType=text/html;x-scheme-handler/http;x-scheme-handler/https;
