@@ -45,9 +45,6 @@ install:
     - gtk-murrine-engine
     - sassc
     - git-core
-    - nodejs
-    - yarnpkg
-    - python3-pip
 remove:
   packages:
     - firefox

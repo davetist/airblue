@@ -35,7 +35,7 @@ assert_contains "$recipe" 'image-version: 44'
 assert_contains "$recipe" 'from-file: packages.yml'
 assert_contains "$recipe" 'type: signing'
 
-for package in lightdm lightdm-gtk xfce4-session xfce4-panel xfce4-settings xfconf xfwm4 xfdesktop thunar xfce4-terminal mousepad xarchiver xfce4-notifyd xfce4-power-manager NetworkManager-wifi NetworkManager-bluetooth network-manager-applet ModemManager xfce4-pulseaudio-plugin xfce4-whiskermenu-plugin xfce4-docklike-plugin xfce4-places-plugin xfce4-screenshooter-plugin xfce4-xkb-plugin pipewire pipewire-pulseaudio wireplumber upower bluez bluez-obexd cups flatpak podman distrobox fwupd linux-firmware mesa-dri-drivers libinput papirus-icon-theme gtk-murrine-engine sassc git-core nodejs yarnpkg python3-pip; do
+for package in lightdm lightdm-gtk xfce4-session xfce4-panel xfce4-settings xfconf xfwm4 xfdesktop thunar xfce4-terminal mousepad xarchiver xfce4-notifyd xfce4-power-manager NetworkManager-wifi NetworkManager-bluetooth network-manager-applet ModemManager xfce4-pulseaudio-plugin xfce4-whiskermenu-plugin xfce4-docklike-plugin xfce4-places-plugin xfce4-screenshooter-plugin xfce4-xkb-plugin pipewire pipewire-pulseaudio wireplumber upower bluez bluez-obexd cups flatpak podman distrobox fwupd linux-firmware mesa-dri-drivers libinput papirus-icon-theme gtk-murrine-engine sassc git-core; do
   assert_contains "$packages" "- $package"
 done
 for package in firefox firefox-langpacks toolbox; do
@@ -44,17 +44,29 @@ done
 assert_absent "$packages" 'gnome-shell'
 assert_absent "$packages" '@xfce-desktop-environment'
 assert_absent "$packages" '@xfce-desktop'
+for package in nodejs yarnpkg python3-pip; do
+  assert_absent "$packages" "- $package"
+done
 themes="$repo_root/files/scripts/install-themes.sh"
 [[ -x "$themes" ]] || fail "$themes must exist and be executable"
 [[ ! -e "$repo_root/scripts/install-themes.sh" ]] || \
   fail "$repo_root/scripts/install-themes.sh is obsolete; BlueBuild scripts belong under files/scripts"
 assert_contains "$themes" 'ORCHIS_REPO=https://github.com/vinceliuice/Orchis-theme.git'
-assert_contains "$themes" 'BIBATA_REPO=https://github.com/ful1e5/Bibata_Cursor.git'
-for variable in ORCHIS_COMMIT BIBATA_COMMIT; do
-  value="$(sed -n "s/^${variable}=//p" "$themes")"
-  [[ "$value" =~ ^[0-9a-f]{40}$ ]] || fail "$variable must be a full Git commit hash"
-done
+value="$(sed -n 's/^ORCHIS_COMMIT=//p' "$themes")"
+[[ "$value" =~ ^[0-9a-f]{40}$ ]] || fail 'ORCHIS_COMMIT must be a full Git commit hash'
 assert_contains "$themes" './install.sh --dest /usr/share/themes --theme default --color standard dark --size standard'
+assert_contains "$themes" 'BIBATA_URL=https://github.com/ful1e5/Bibata_Cursor/releases/download/v2.0.7/Bibata-Modern-Classic.tar.xz'
+assert_contains "$themes" 'BIBATA_SHA256=7d3495864e5bbef02f5e77de760b2905903b63c71495a78ef6306d19a3b556d8'
+assert_contains "$themes" 'curl --fail --location --show-error --silent --retry 5 --retry-all-errors'
+assert_contains "$themes" 'sha256sum --check -'
+assert_contains "$themes" 'Bibata-Modern-Classic/index.theme'
+for obsolete in BIBATA_REPO BIBATA_COMMIT 'yarn install' 'yarn generate'; do
+  assert_absent "$themes" "$obsolete"
+done
+checksum_line="$(grep -nF 'sha256sum --check -' "$themes" | cut -d: -f1)"
+extract_line="$(grep -nF 'tar --extract' "$themes" | cut -d: -f1)"
+[[ -n "$checksum_line" && -n "$extract_line" && "$checksum_line" -lt "$extract_line" ]] || \
+  fail 'Bibata checksum verification must occur before extraction'
 
 xfce="$repo_root/files/system/etc/xdg/xfce4/xfconf/xfce-perchannel-xml"
 assert_contains "$xfce/xsettings.xml" 'value="Orchis-Dark"'

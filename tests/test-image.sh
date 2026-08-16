@@ -295,10 +295,7 @@ for package in \
   papirus-icon-theme \
   gtk-murrine-engine \
   sassc \
-  git-core \
-  nodejs \
-  yarnpkg \
-  python3-pip; do
+  git-core; do
   require_rpm "$package"
 done
 
