@@ -10,7 +10,7 @@ Start from a supported Fedora Silverblue installation and back up unsynchronized
 data. The commands below retain a pinned Silverblue deployment for recovery. Do
 **not** unpin it until every hardware acceptance check has passed.
 
-Replace `OWNER` with the GitHub organization or user that publishes the image.
+The published image is hosted under the `davetist` GitHub account.
 Each command block that uses `$IMAGE` assigns it first, so it remains safe to
 copy after a reboot or into a new terminal.
 
@@ -27,7 +27,7 @@ Pin the current Silverblue deployment, inspect it, then make the initial
 unsigned rebase:
 
 ```bash
-IMAGE=ghcr.io/OWNER/airblue
+IMAGE=ghcr.io/davetist/airblue
 sudo ostree admin pin 0
 rpm-ostree status
 sudo rpm-ostree rebase ostree-unverified-registry:$IMAGE:latest
@@ -39,7 +39,7 @@ and public key. After rebooting, switch to the signed transport so subsequent
 image updates are signature-enforced:
 
 ```bash
-IMAGE=ghcr.io/OWNER/airblue
+IMAGE=ghcr.io/davetist/airblue
 sudo rpm-ostree rebase ostree-image-signed:docker://$IMAGE:latest
 systemctl reboot
 ```
@@ -68,7 +68,7 @@ From a checkout of this repository, where `cosign.pub` is the reviewed public
 key, independently verify the current image tag:
 
 ```bash
-IMAGE=ghcr.io/OWNER/airblue
+IMAGE=ghcr.io/davetist/airblue
 cosign verify --key cosign.pub $IMAGE:latest
 ```
 
