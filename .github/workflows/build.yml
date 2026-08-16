@@ -49,6 +49,7 @@ jobs:
         with:
           recipe: recipe.yml
           cosign_private_key: ''
+          registry_username: ''
           registry_token: ''
           registry_namespace: ${{ github.repository_owner }}
           pr_event_number: ${{ github.event.number }}

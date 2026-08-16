@@ -30,6 +30,7 @@ ACTION = "blue-build/github-action@v1.11"
 EXPECTED_VALIDATE_INPUTS = {
     "recipe": "recipe.yml",
     "cosign_private_key": "",
+    "registry_username": "",
     "registry_token": "",
     "registry_namespace": "${{ github.repository_owner }}",
     "pr_event_number": "${{ github.event.number }}",
@@ -154,7 +155,7 @@ if validate_actions:
     validate_inputs = validate_actions[0].get("with", {})
     require(
         validate_inputs == EXPECTED_VALIDATE_INPUTS,
-        "validate BlueBuild inputs must exactly use empty credentials, push false, and the Podman driver",
+        "validate BlueBuild inputs must exactly use empty registry username/token and signing key, push false, and the Podman driver",
     )
 
 validate_strings = strings(validate)
