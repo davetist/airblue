@@ -106,7 +106,8 @@ assert_contains "$image_test" '--validate-config'
 assert_contains "$image_validator" 'image validator fixtures: PASS'
 
 readme="$repo_root/README.md"
-assert_contains "$readme" 'IMAGE=ghcr.io/OWNER/airblue'
+assert_contains "$readme" 'IMAGE=ghcr.io/davetist/airblue'
+assert_absent "$readme" 'OWNER'
 assert_contains "$readme" 'ostree-unverified-registry:$IMAGE:latest'
 assert_contains "$readme" 'ostree-image-signed:docker://$IMAGE:latest'
 assert_contains "$readme" 'rpm-ostree status'

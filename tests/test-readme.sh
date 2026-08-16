@@ -41,7 +41,9 @@ def require_order(value, *fragments):
             fail(f"missing or out-of-order: {fragment}")
         position = next_position
 
-image = "IMAGE=ghcr.io/OWNER/airblue"
+image = "IMAGE=ghcr.io/davetist/airblue"
+if "OWNER" in text:
+    fail("README still contains the OWNER placeholder")
 for block in bash_blocks:
     if "$IMAGE" in block:
         if block.find(image) < 0 or block.find(image) > block.find("$IMAGE"):
