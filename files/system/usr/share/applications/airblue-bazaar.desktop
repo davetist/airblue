@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Bazaar
+Icon=io.github.kolunmi.Bazaar
+Exec=flatpak run io.github.kolunmi.Bazaar
+Terminal=false

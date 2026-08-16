@@ -1,0 +1,4 @@
+[Default Applications]
+text/html=airblue-zen.desktop;
+x-scheme-handler/http=airblue-zen.desktop;
+x-scheme-handler/https=airblue-zen.desktop;
