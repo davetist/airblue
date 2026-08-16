@@ -183,6 +183,81 @@ for mime_type, expected in expected_defaults.items():
 PY
 }
 
+validate_browser_helper() {
+  local helpers_rc="$1" helper="$2" application="$3"
+
+  python3 - "$helpers_rc" "$helper" "$application" <<'PY'
+import configparser
+import sys
+from pathlib import Path
+
+
+def fail(message):
+    print(f"FAIL: {message}", file=sys.stderr)
+    raise SystemExit(1)
+
+
+helpers_rc_path, helper_path, application_path = map(Path, sys.argv[1:])
+try:
+    helper_lines = [
+        line.strip()
+        for line in helpers_rc_path.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.lstrip().startswith(("#", ";"))
+    ]
+except OSError as error:
+    fail(f"XFCE helpers configuration is unreadable: {error}")
+if helper_lines != ["WebBrowser=airblue-zen"]:
+    fail(f"XFCE WebBrowser helper mapping is {helper_lines!r}, expected airblue-zen")
+helper_id = helper_lines[0].split("=", 1)[1]
+if helper_path.stem != helper_id:
+    fail(f"XFCE WebBrowser helper {helper_id!r} does not match helper filename {helper_path.name!r}")
+
+
+def desktop_entry(path, label):
+    parser = configparser.ConfigParser(
+        interpolation=None,
+        strict=True,
+        delimiters=("=",),
+        comment_prefixes=("#", ";"),
+        inline_comment_prefixes=None,
+    )
+    parser.optionxform = str
+    try:
+        with path.open(encoding="utf-8") as stream:
+            parser.read_file(stream)
+    except (OSError, configparser.Error) as error:
+        fail(f"{label} desktop entry is malformed: {error}")
+    if parser.sections() != ["Desktop Entry"]:
+        fail(f"{label} desktop entry must contain only [Desktop Entry]")
+    return parser["Desktop Entry"]
+
+
+helper_entry = desktop_entry(helper_path, "XFCE browser helper")
+expected_helper = {
+    "Type": "X-XFCE-Helper",
+    "Name": "Zen Browser",
+    "StartupNotify": "true",
+    "X-XFCE-Binaries": "flatpak;",
+    "X-XFCE-Category": "WebBrowser",
+    "X-XFCE-Commands": "flatpak run app.zen_browser.zen;",
+    "X-XFCE-CommandsWithParameter": 'flatpak run app.zen_browser.zen "%s";',
+}
+for key, expected in expected_helper.items():
+    actual = helper_entry.get(key, raw=True)
+    if actual != expected:
+        fail(f"XFCE browser helper {key} is {actual!r}, expected {expected!r}")
+
+if application_path.name != "airblue-zen.desktop":
+    fail(f"Zen application filename is {application_path.name!r}, expected airblue-zen.desktop")
+application_entry = desktop_entry(application_path, "Zen application")
+if application_entry.get("Type", raw=True) != "Application":
+    fail("Zen application Type must be Application")
+expected_exec = "flatpak run app.zen_browser.zen %U"
+if application_entry.get("Exec", raw=True) != expected_exec:
+    fail(f"Zen application Exec must be {expected_exec!r}")
+PY
+}
+
 validate_image_modules() {
   local modules_root="$1" tree version module found
   local -a candidate_trees=() image_trees=()
@@ -247,6 +322,13 @@ case "${1:-}" in
     [[ "$#" -eq 2 ]] || fail 'usage: test-image.sh --validate-modules MODULES_ROOT'
     validate_image_modules "$2"
     printf 'image module validation: PASS\n'
+    exit 0
+    ;;
+  --validate-helper)
+    [[ "$#" -eq 4 ]] ||
+      fail 'usage: test-image.sh --validate-helper HELPERS_RC HELPER_DESKTOP APPLICATION_DESKTOP'
+    validate_browser_helper "$2" "$3" "$4"
+    printf 'image helper validation: PASS\n'
     exit 0
     ;;
   '') ;;
@@ -319,6 +401,7 @@ for path in \
   /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml \
   /etc/xdg/xfce4/helpers.rc \
   /etc/xdg/xfce4/panel/docklike.rc \
+  /usr/share/xfce4/helpers/airblue-zen.desktop \
   /usr/share/applications/airblue-zen.desktop \
   /usr/share/applications/airblue-bazaar.desktop \
   /usr/share/applications/defaults.list \
@@ -336,6 +419,13 @@ done
 
 require_file_content /etc/xdg/xfce4/panel/docklike.rc \
   'pinned=airblue-zen.desktop;airblue-bazaar.desktop;thunar.desktop;xfce4-terminal.desktop;'
+require_file_content /etc/xdg/xfce4/helpers.rc 'WebBrowser=airblue-zen'
+require_file_content /usr/share/xfce4/helpers/airblue-zen.desktop \
+  'X-XFCE-Commands=flatpak run app.zen_browser.zen;'
+validate_browser_helper \
+  /etc/xdg/xfce4/helpers.rc \
+  /usr/share/xfce4/helpers/airblue-zen.desktop \
+  /usr/share/applications/airblue-zen.desktop
 
 validate_composed_config \
   /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml \

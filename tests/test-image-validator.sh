@@ -5,6 +5,9 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 image_test="$repo_root/tests/test-image.sh"
 source_panel="$repo_root/files/system/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
 source_defaults="$repo_root/files/system/usr/share/applications/defaults.list"
+source_helpers_rc="$repo_root/files/system/etc/xdg/xfce4/helpers.rc"
+source_helper="$repo_root/files/system/usr/share/xfce4/helpers/airblue-zen.desktop"
+source_zen_app="$repo_root/files/system/usr/share/applications/airblue-zen.desktop"
 workdir="$(mktemp -d)"
 trap 'rm -rf "$workdir"' EXIT
 
@@ -27,6 +30,45 @@ validate_thunar_rpm_contract() {
 }
 
 validate_thunar_rpm_contract "$image_test"
+
+if ! output="$(bash "$image_test" --validate-helper \
+  "$source_helpers_rc" "$source_helper" "$source_zen_app" 2>&1)"; then
+  fail "valid Zen browser helper was rejected: $output"
+fi
+[[ "$output" == 'image helper validation: PASS' ]] ||
+  fail "valid Zen browser helper emitted unexpected output: $output"
+
+expect_helper_failure() {
+  local helpers_rc="$1" helper="$2" application="$3" expected="$4" output
+
+  if output="$(bash "$image_test" --validate-helper \
+    "$helpers_rc" "$helper" "$application" 2>&1)"; then
+    fail 'invalid Zen browser helper fixture unexpectedly passed'
+  fi
+  [[ "$output" == *"$expected"* ]] ||
+    fail "Zen browser helper fixture failed without '$expected': $output"
+}
+
+helper_fixture="$workdir/helper"
+mkdir -p "$helper_fixture/xfce" "$helper_fixture/applications"
+cp "$source_helpers_rc" "$helper_fixture/helpers.rc"
+cp "$source_helper" "$helper_fixture/xfce/airblue-zen.desktop"
+cp "$source_zen_app" "$helper_fixture/applications/airblue-zen.desktop"
+
+sed -i 's/app\.zen_browser\.zen/app.wrong.browser/' "$helper_fixture/xfce/airblue-zen.desktop"
+expect_helper_failure \
+  "$helper_fixture/helpers.rc" \
+  "$helper_fixture/xfce/airblue-zen.desktop" \
+  "$helper_fixture/applications/airblue-zen.desktop" \
+  'XFCE browser helper X-XFCE-Commands'
+
+cp "$source_helper" "$helper_fixture/xfce/airblue-zen.desktop"
+sed -i 's/WebBrowser=airblue-zen/WebBrowser=missing-helper/' "$helper_fixture/helpers.rc"
+expect_helper_failure \
+  "$helper_fixture/helpers.rc" \
+  "$helper_fixture/xfce/airblue-zen.desktop" \
+  "$helper_fixture/applications/airblue-zen.desktop" \
+  'XFCE WebBrowser helper mapping'
 
 make_config_fixture() {
   local name="$1" fixture="$workdir/$1" plugin

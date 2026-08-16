@@ -8,13 +8,22 @@ fixture_dir="$(mktemp -d /tmp/airblue-workflow-fixtures.XXXXXX)"
 trap 'rm -rf -- "$fixture_dir"' EXIT
 
 python3 - "$workflow" "$fixture_dir/pr-or.yml" "$fixture_dir/latest-smoke.yml" \
-  "$fixture_dir/anonymous-validation.yml" "$fixture_dir/validation-write.yml" <<'PY'
+  "$fixture_dir/anonymous-validation.yml" "$fixture_dir/validation-write.yml" \
+  "$fixture_dir/no-pr-cosign.yml" "$fixture_dir/no-push-cosign.yml" <<'PY'
 import copy
 import sys
 
 import yaml
 
-source, pr_or_path, latest_path, anonymous_path, validation_write_path = sys.argv[1:]
+(
+    source,
+    pr_or_path,
+    latest_path,
+    anonymous_path,
+    validation_write_path,
+    no_pr_cosign_path,
+    no_push_cosign_path,
+) = sys.argv[1:]
 with open(source, encoding="utf-8") as workflow_file:
     workflow = yaml.load(workflow_file, Loader=yaml.BaseLoader)
 
@@ -53,6 +62,16 @@ validation_write = copy.deepcopy(workflow)
 validation_write["jobs"]["validate"]["permissions"]["packages"] = "write"
 with open(validation_write_path, "w", encoding="utf-8") as fixture_file:
     yaml.safe_dump(validation_write, fixture_file, sort_keys=False)
+
+no_pr_cosign = copy.deepcopy(workflow)
+no_pr_cosign["on"]["pull_request"]["paths"].remove("cosign.pub")
+with open(no_pr_cosign_path, "w", encoding="utf-8") as fixture_file:
+    yaml.safe_dump(no_pr_cosign, fixture_file, sort_keys=False)
+
+no_push_cosign = copy.deepcopy(workflow)
+no_push_cosign["on"]["push"]["paths"].remove("cosign.pub")
+with open(no_push_cosign_path, "w", encoding="utf-8") as fixture_file:
+    yaml.safe_dump(no_push_cosign, fixture_file, sort_keys=False)
 PY
 
 expect_rejected() {
@@ -77,5 +96,9 @@ expect_rejected 'anonymous validation pull' "$fixture_dir/anonymous-validation.y
   'validate BlueBuild inputs must exactly use the owner and read-only GitHub token'
 expect_rejected 'validation package write permission' "$fixture_dir/validation-write.yml" \
   'validate job must have contents: read and packages: read only'
+expect_rejected 'missing pull-request cosign trigger' "$fixture_dir/no-pr-cosign.yml" \
+  'pull_request paths are incorrect'
+expect_rejected 'missing push cosign trigger' "$fixture_dir/no-push-cosign.yml" \
+  'push paths are incorrect'
 
 printf 'workflow validator mutations: PASS\n'

@@ -58,6 +58,7 @@ EXPECTED_PUBLISH_CONDITION = " ".join(
 )
 EXPECTED_PATHS = [
     ".github/workflows/build.yml",
+    "cosign.pub",
     "recipes/**",
     "scripts/**",
     "files/**",
