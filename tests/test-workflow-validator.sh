@@ -8,13 +8,13 @@ fixture_dir="$(mktemp -d /tmp/airblue-workflow-fixtures.XXXXXX)"
 trap 'rm -rf -- "$fixture_dir"' EXIT
 
 python3 - "$workflow" "$fixture_dir/pr-or.yml" "$fixture_dir/latest-smoke.yml" \
-  "$fixture_dir/authenticated-validation.yml" <<'PY'
+  "$fixture_dir/anonymous-validation.yml" "$fixture_dir/validation-write.yml" <<'PY'
 import copy
 import sys
 
 import yaml
 
-source, pr_or_path, latest_path, authenticated_path = sys.argv[1:]
+source, pr_or_path, latest_path, anonymous_path, validation_write_path = sys.argv[1:]
 with open(source, encoding="utf-8") as workflow_file:
     workflow = yaml.load(workflow_file, Loader=yaml.BaseLoader)
 
@@ -40,13 +40,19 @@ for step in latest["jobs"]["validate"]["steps"]:
 with open(latest_path, "w", encoding="utf-8") as fixture_file:
     yaml.safe_dump(latest, fixture_file, sort_keys=False)
 
-authenticated = copy.deepcopy(workflow)
-for step in authenticated["jobs"]["validate"]["steps"]:
+anonymous = copy.deepcopy(workflow)
+for step in anonymous["jobs"]["validate"]["steps"]:
     if step.get("uses") == "blue-build/github-action@v1.11":
-        step["with"]["registry_username"] = "unexpected-user"
+        step["with"]["registry_username"] = ""
+        step["with"]["registry_token"] = ""
         break
-with open(authenticated_path, "w", encoding="utf-8") as fixture_file:
-    yaml.safe_dump(authenticated, fixture_file, sort_keys=False)
+with open(anonymous_path, "w", encoding="utf-8") as fixture_file:
+    yaml.safe_dump(anonymous, fixture_file, sort_keys=False)
+
+validation_write = copy.deepcopy(workflow)
+validation_write["jobs"]["validate"]["permissions"]["packages"] = "write"
+with open(validation_write_path, "w", encoding="utf-8") as fixture_file:
+    yaml.safe_dump(validation_write, fixture_file, sort_keys=False)
 PY
 
 expect_rejected() {
@@ -67,7 +73,9 @@ expect_rejected 'PR-OR publish condition' "$fixture_dir/pr-or.yml" \
   'publish condition allows pull_request'
 expect_rejected 'latest smoke target' "$fixture_dir/latest-smoke.yml" \
   'smoke must execute the exact local image reference'
-expect_rejected 'authenticated validation pull' "$fixture_dir/authenticated-validation.yml" \
-  'validate BlueBuild inputs must exactly use empty registry username/token and signing key'
+expect_rejected 'anonymous validation pull' "$fixture_dir/anonymous-validation.yml" \
+  'validate BlueBuild inputs must exactly use the owner and read-only GitHub token'
+expect_rejected 'validation package write permission' "$fixture_dir/validation-write.yml" \
+  'validate job must have contents: read and packages: read only'
 
 printf 'workflow validator mutations: PASS\n'

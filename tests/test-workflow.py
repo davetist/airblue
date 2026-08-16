@@ -30,8 +30,8 @@ ACTION = "blue-build/github-action@v1.11"
 EXPECTED_VALIDATE_INPUTS = {
     "recipe": "recipe.yml",
     "cosign_private_key": "",
-    "registry_username": "",
-    "registry_token": "",
+    "registry_username": "${{ github.repository_owner }}",
+    "registry_token": "${{ github.token }}",
     "registry_namespace": "${{ github.repository_owner }}",
     "pr_event_number": "${{ github.event.number }}",
     "maximize_build_space": "true",
@@ -147,7 +147,10 @@ jobs = workflow.get("jobs", {})
 require(set(jobs) == {"validate", "publish"}, "workflow must contain separate validate and publish jobs")
 
 validate = jobs.get("validate", {})
-require(validate.get("permissions") == {"contents": "read"}, "validate job must have contents: read only")
+require(
+    validate.get("permissions") == {"contents": "read", "packages": "read"},
+    "validate job must have contents: read and packages: read only",
+)
 require("needs" not in validate, "validate job must not depend on the privileged publish job")
 validate_actions = action_steps(validate)
 require(len(validate_actions) == 1, "validate job must invoke BlueBuild v1.11 exactly once")
@@ -155,12 +158,15 @@ if validate_actions:
     validate_inputs = validate_actions[0].get("with", {})
     require(
         validate_inputs == EXPECTED_VALIDATE_INPUTS,
-        "validate BlueBuild inputs must exactly use empty registry username/token and signing key, push false, and the Podman driver",
+        "validate BlueBuild inputs must exactly use the owner and read-only GitHub token, empty signing key, push false, and the Podman driver",
     )
 
 validate_strings = strings(validate)
 require(not any("secrets." in value for value in validate_strings), "validate job must not reference secrets")
-require(not any("github.token" in value for value in validate_strings), "validate job must not reference github.token")
+require(
+    [value for value in validate_strings if "github.token" in value] == ["${{ github.token }}"],
+    "validate job may use github.token only as the registry token",
+)
 
 validate_steps = validate.get("steps", [])
 source_index = next(
