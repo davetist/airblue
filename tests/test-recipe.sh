@@ -44,7 +44,10 @@ done
 assert_absent "$packages" 'gnome-shell'
 assert_absent "$packages" '@xfce-desktop-environment'
 assert_absent "$packages" '@xfce-desktop'
-themes="$repo_root/scripts/install-themes.sh"
+themes="$repo_root/files/scripts/install-themes.sh"
+[[ -x "$themes" ]] || fail "$themes must exist and be executable"
+[[ ! -e "$repo_root/scripts/install-themes.sh" ]] || \
+  fail "$repo_root/scripts/install-themes.sh is obsolete; BlueBuild scripts belong under files/scripts"
 assert_contains "$themes" 'ORCHIS_REPO=https://github.com/vinceliuice/Orchis-theme.git'
 assert_contains "$themes" 'BIBATA_REPO=https://github.com/ful1e5/Bibata_Cursor.git'
 for variable in ORCHIS_COMMIT BIBATA_COMMIT; do
