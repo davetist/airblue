@@ -13,6 +13,21 @@ fail() {
   exit 1
 }
 
+validate_thunar_rpm_contract() {
+  local script="$1"
+
+  grep -Fqx '  Thunar \' "$script" || {
+    printf 'FAIL: image smoke must query case-sensitive Fedora RPM name: Thunar\n' >&2
+    return 1
+  }
+  if grep -Fqx '  thunar \' "$script"; then
+    printf 'FAIL: image smoke must not query lowercase RPM name: thunar\n' >&2
+    return 1
+  fi
+}
+
+validate_thunar_rpm_contract "$image_test"
+
 make_config_fixture() {
   local name="$1" fixture="$workdir/$1" plugin
 
@@ -173,5 +188,14 @@ if output="$(MODINFO_MISSING=applesmc bash "$image_test" --validate-modules "$mo
 fi
 [[ "$output" == *'kernel module metadata is missing from image-owned trees: applesmc'* ]] ||
   fail "missing module metadata failed unexpectedly: $output"
+
+lowercase_thunar="$workdir/lowercase-thunar.sh"
+cp "$image_test" "$lowercase_thunar"
+sed -i 's/Thunar/thunar/' "$lowercase_thunar"
+if output="$(validate_thunar_rpm_contract "$lowercase_thunar" 2>&1)"; then
+  fail 'lowercase Thunar RPM mutation unexpectedly passed'
+fi
+[[ "$output" == *'case-sensitive Fedora RPM name: Thunar'* ]] ||
+  fail "lowercase Thunar mutation failed unexpectedly: $output"
 
 printf 'image validator fixtures: PASS\n'

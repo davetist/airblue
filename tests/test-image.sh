@@ -262,7 +262,7 @@ for package in \
   xfconf \
   xfwm4 \
   xfdesktop \
-  thunar \
+  Thunar \
   xfce4-terminal \
   mousepad \
   xarchiver \

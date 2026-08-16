@@ -129,6 +129,7 @@ for heading in \
 done
 bash "$repo_root/tests/test-readme.sh"
 bash "$repo_root/tests/test-readme-validator.sh"
+bash "$repo_root/tests/test-image-validator.sh"
 
 python3 "$repo_root/tests/test-workflow.py"
 bash "$repo_root/tests/test-workflow-validator.sh"
